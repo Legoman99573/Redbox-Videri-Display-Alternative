@@ -1,0 +1,36 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'wiki.redbox.RedboxVideri' // Set the namespace here
+
+    compileSdkVersion 34  // Ensure this is here
+
+    defaultConfig {
+        applicationId "wiki.redbox.RedboxVideri" // Set the package name here
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8  // Java 7 compatibility
+        targetCompatibility JavaVersion.VERSION_1_8  // Java 7 compatibility
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"  // Set Kotlin bytecode compatibility to Java 7
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+    implementation "com.google.android.material:material:1.9.0"
+    implementation "androidx.core:core-ktx:1.12.0"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
+    implementation "com.github.bumptech.glide:glide:4.15.0"
+    implementation "com.squareup.okhttp3:okhttp:4.10.0"
+}

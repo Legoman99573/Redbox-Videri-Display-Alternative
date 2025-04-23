@@ -1,0 +1,7 @@
+<resources>
+    <style name="SplashTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Customize your splash screen theme -->
+        <item name="android:windowBackground">@drawable/splash</item> <!-- Replace with your splash image -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>

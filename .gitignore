@@ -1,0 +1,37 @@
+# Gradle files
+.gradle/
+build/
+local.properties
+*.iml
+
+# Android Studio specific files
+.idea/
+*.iws
+*.ipr
+*.db
+
+# User-specific files
+*.log
+*.swp
+*~.nib
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Android specific
+/.idea/
+*.apk
+*.ap_
+*/bin/
+*/gen/
+*/out/
+
+# Keystore files (ensure to manually add any relevant keystore to a safe location)
+*.jks
+*.keystore
+
+# Log files
+*.log
+app/debug/
+app/release/

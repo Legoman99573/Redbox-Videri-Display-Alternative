@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+	
+	<!-- Splash ImageView (Initially visible during the download) -->
+    <ImageView
+        android:id="@+id/splashImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:adjustViewBounds="false"
+        android:scaleType="fitCenter"
+        android:src="@drawable/splash"
+        android:visibility="gone" /> <!-- Initially hidden -->
+
+    <!-- Ad Video fullscreen in background -->
+    <VideoView
+        android:id="@+id/adVideo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+		android:scaleType="fitCenter"
+        android:visibility="gone" />
+
+    <!-- Ad Image fullscreen over video, fills height, maintains aspect ratio -->
+    <ImageView
+        android:id="@+id/adImage"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:adjustViewBounds="false"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+		android:contentDescription="@string/content_description" />
+
+    <!-- Status TextView at the top center -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/status_text"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="16dp" />
+</FrameLayout>
+

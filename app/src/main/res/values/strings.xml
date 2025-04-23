@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Redbox Videri</string>
+	<string name="status_text">Status</string>
+	<string name="content_description">Ad image displayed in the app</string>
+</resources>
