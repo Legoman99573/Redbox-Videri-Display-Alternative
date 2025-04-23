@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var adPlayer: AdPlayer
     private lateinit var statusText: TextView
-    private lateinit var splashImageView: ImageView
+    private lateinit var splashImageView: ImageView // Added for splash screen display
 
     @SuppressLint("NewApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,26 +30,37 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        // Remove action bar (if not already done in manifest)
         supportActionBar?.hide()
 
-        window.decorView.systemUiVisibility = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            View.SYSTEM_UI_FLAG_IMMERSIVE or
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        // Hide the navigation bar and make the app fullscreen
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_IMMERSIVE
+                            or View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    )
         } else {
-            View.SYSTEM_UI_FLAG_FULLSCREEN or
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    )
         }
 
+        // Initialize UI elements
         statusText = findViewById(R.id.statusText)
-        splashImageView = findViewById(R.id.splashImageView)
+        splashImageView = findViewById(R.id.splashImageView) // Add this to the layout
 
+        // Show splash screen initially
         splashImageView.visibility = View.VISIBLE
-        splashImageView.setImageResource(R.drawable.splash)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             lifecycleScope.launch {
                 updateStatus("Initializing...")
+
+                // Show splash screen
+                splashImageView.setImageResource(R.drawable.splash)
+
                 delay(1000)
 
                 updateStatus("Downloading ad list...")
@@ -61,21 +72,20 @@ class MainActivity : AppCompatActivity() {
                 updateStatus("Loading ads...")
                 delay(1000)
 
-                adPlayer = AdPlayer(this@MainActivity) {
-                    runOnUiThread {
-                        splashImageView.visibility = View.GONE
-                        updateStatus("")
-                    }
-                }
+                // Ads finished, hide splash image and start playing ads
+                splashImageView.visibility = View.GONE // Hide splash screen
+                updateStatus("")
+
+                adPlayer = AdPlayer(this@MainActivity)
                 adPlayer.startPlaying()
             }
         } else {
+            // For versions below Android 6, manually manage background tasks using Thread
             Thread {
                 try {
-                    runOnUiThread {
-                        updateStatus("Initializing...")
-                        splashImageView.setImageResource(R.drawable.splash)
-                    }
+                    runOnUiThread { updateStatus("Initializing...") }
+                    runOnUiThread { splashImageView.setImageResource(R.drawable.splash) } // Show splash
+
                     Thread.sleep(1000)
 
                     runOnUiThread { updateStatus("Downloading ad list...") }
@@ -87,18 +97,17 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    runOnUiThread {
-                        updateStatus("Loading ads...")
-                    }
+                    runOnUiThread { updateStatus("Loading ads...") }
                     Thread.sleep(1000)
 
+                    // Ads finished, hide splash image and start playing ads
                     runOnUiThread {
-                        adPlayer = AdPlayer(this@MainActivity) {
-                            runOnUiThread {
-                                splashImageView.visibility = View.GONE
-                                updateStatus("")
-                            }
-                        }
+                        splashImageView.visibility = View.GONE // Hide splash screen
+                        updateStatus("")
+                    }
+
+                    runOnUiThread {
+                        adPlayer = AdPlayer(this@MainActivity)
                         adPlayer.startPlaying()
                     }
 

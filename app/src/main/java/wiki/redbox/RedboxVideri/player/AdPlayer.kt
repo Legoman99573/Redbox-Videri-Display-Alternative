@@ -1,97 +1,64 @@
 package wiki.redbox.RedboxVideri.player
 
 import android.content.Context
-import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import android.widget.VideoView
-import kotlinx.coroutines.*
+import com.bumptech.glide.Glide
 import wiki.redbox.RedboxVideri.MainActivity
 import wiki.redbox.RedboxVideri.R
 import wiki.redbox.RedboxVideri.manager.AdManager
-import wiki.redbox.RedboxVideri.model.Ad
-import java.io.File
 
-class AdPlayer(
-    private val context: Context,
-    private val onFirstAdStarted: (() -> Unit)? = null
-) {
+class AdPlayer(private val context: Context) {
 
-    private val ads = AdManager.getAds()
+    private var ads = AdManager.getAds()
     private var currentIndex = 0
-    private var isPlaying = false
-    private var hasStarted = false
+    private val handler = Handler(Looper.getMainLooper())
 
-    private val videoView: VideoView by lazy { (context as? MainActivity)?.findViewById(R.id.adVideo)!! }
-    private val imageView: ImageView by lazy { (context as? MainActivity)?.findViewById(R.id.adImage)!! }
-
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private lateinit var imageView: ImageView
+    private lateinit var videoView: VideoView
 
     fun startPlaying() {
-        isPlaying = true
-        playNextAd()
+        imageView = (context as MainActivity).findViewById(R.id.adImage)
+        videoView = context.findViewById(R.id.adVideo)
+
+        playNext()
     }
 
-    private fun playNextAd() {
-        if (!isPlaying || ads.isEmpty()) return
+    private fun playNext() {
+        if (ads.isEmpty()) return
 
         val ad = ads[currentIndex]
+        currentIndex = (currentIndex + 1) % ads.size
 
         if (ad.isVideo) {
-            showVideo(ad)
+            showVideo(ad.path)
         } else {
-            showImage(ad)
+            showImage(ad.path, ad.durationMs.toLong())
         }
     }
 
-    private fun showVideo(ad: Ad) {
+    private fun showVideo(videoPath: String) {
         imageView.visibility = View.GONE
         videoView.visibility = View.VISIBLE
 
-        val file = File(context.filesDir, ad.path)
-        videoView.setVideoURI(Uri.fromFile(file))
-
-        videoView.setOnPreparedListener { mediaPlayer: MediaPlayer ->
-            mediaPlayer.isLooping = false
-            if (!hasStarted) {
-                hasStarted = true
-                onFirstAdStarted?.invoke()
-            }
-            videoView.start()
-        }
-
+        videoView.setVideoURI(Uri.parse(videoPath))
         videoView.setOnCompletionListener {
-            nextAd()
+            handler.postDelayed({ playNext() }, 1000)
         }
+        videoView.start()
     }
 
-    private fun showImage(ad: Ad) {
+    private fun showImage(imagePath: String, duration: Long) {
+        videoView.stopPlayback()
         videoView.visibility = View.GONE
         imageView.visibility = View.VISIBLE
 
-        val file = File(context.filesDir, ad.path)
-        imageView.setImageURI(Uri.fromFile(file))
+        Glide.with(context).load(imagePath).into(imageView)
 
-        if (!hasStarted) {
-            hasStarted = true
-            onFirstAdStarted?.invoke()
-        }
-
-        coroutineScope.launch {
-            delay(ad.durationMs.toLong())
-            nextAd()
-        }
-    }
-
-    private fun nextAd() {
-        currentIndex = (currentIndex + 1) % ads.size
-        playNextAd()
-    }
-
-    fun stop() {
-        isPlaying = false
-        coroutineScope.cancel()
-        videoView.stopPlayback()
+        handler.postDelayed({ playNext() }, duration)
     }
 }
