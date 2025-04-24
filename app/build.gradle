@@ -2,25 +2,25 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace 'wiki.redbox.RedboxVideri' // Set the namespace here
+    namespace 'wiki.redbox.RedboxVideri'
 
-    compileSdkVersion 34  // Ensure this is here
+    compileSdkVersion 34
 
     defaultConfig {
-        applicationId "wiki.redbox.RedboxVideri" // Set the package name here
+        applicationId "wiki.redbox.RedboxVideri"
         minSdk 21
         targetSdk 34
         versionCode 1
-        versionName "1.0"
+        versionName "1.1"
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8  // Java 7 compatibility
-        targetCompatibility JavaVersion.VERSION_1_8  // Java 7 compatibility
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"  // Set Kotlin bytecode compatibility to Java 7
+        jvmTarget = "1.8"
     }
 }
 

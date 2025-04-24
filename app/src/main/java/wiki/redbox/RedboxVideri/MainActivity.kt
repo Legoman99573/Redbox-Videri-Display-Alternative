@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import wiki.redbox.RedboxVideri.manager.AdManager
 import wiki.redbox.RedboxVideri.player.AdPlayer
 
@@ -19,51 +20,40 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var adPlayer: AdPlayer
     private lateinit var statusText: TextView
-    private lateinit var splashImageView: ImageView // Added for splash screen display
+    private lateinit var splashImageView: ImageView
 
-    @SuppressLint("NewApi")
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Force landscape orientation in case the manifest isn't enough
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
         setContentView(R.layout.activity_main)
 
-        // Remove action bar (if not already done in manifest)
         supportActionBar?.hide()
 
-        // Hide the navigation bar and make the app fullscreen
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE
-                            or View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    )
+        window.decorView.systemUiVisibility = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            View.SYSTEM_UI_FLAG_IMMERSIVE or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         } else {
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    )
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         }
 
         // Initialize UI elements
         statusText = findViewById(R.id.statusText)
-        splashImageView = findViewById(R.id.splashImageView) // Add this to the layout
+        splashImageView = findViewById(R.id.splashImageView)
 
-        // Show splash screen initially
-        splashImageView.visibility = View.VISIBLE
+        showSplashScreen()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            lifecycleScope.launch {
+            // For Android 6.0 and above: use coroutines
+            lifecycleScope.launch(Dispatchers.Main) {
                 updateStatus("Initializing...")
 
-                // Show splash screen
-                splashImageView.setImageResource(R.drawable.splash)
-
                 delay(1000)
-
                 updateStatus("Downloading ad list...")
+
                 AdManager.initialize(this@MainActivity)
                 AdManager.fetchAdsIfNeeded { progress, total ->
                     updateStatus("Downloading asset $progress of $total...")
@@ -72,45 +62,36 @@ class MainActivity : AppCompatActivity() {
                 updateStatus("Loading ads...")
                 delay(1000)
 
-                // Ads finished, hide splash image and start playing ads
-                splashImageView.visibility = View.GONE // Hide splash screen
-                updateStatus("")
-
-                adPlayer = AdPlayer(this@MainActivity)
-                adPlayer.startPlaying()
+                startAdPlayback()
             }
         } else {
-            // For versions below Android 6, manually manage background tasks using Thread
+            // For Android 5.x and below: use traditional threading
             Thread {
                 try {
-                    runOnUiThread { updateStatus("Initializing...") }
-                    runOnUiThread { splashImageView.setImageResource(R.drawable.splash) } // Show splash
+                    runOnUiThread {
+                        updateStatus("Initializing...")
+                        showSplashImage()
+                    }
 
                     Thread.sleep(1000)
 
                     runOnUiThread { updateStatus("Downloading ad list...") }
-                    AdManager.initialize(this@MainActivity)
 
-                    kotlinx.coroutines.runBlocking {
+                    AdManager.initialize(this@MainActivity)
+                    runBlocking {
                         AdManager.fetchAdsIfNeeded { progress, total ->
-                            runOnUiThread { updateStatus("Downloading asset $progress of $total...") }
+                            runOnUiThread {
+                                updateStatus("Downloading asset $progress of $total...")
+                            }
                         }
                     }
 
-                    runOnUiThread { updateStatus("Loading ads...") }
-                    Thread.sleep(1000)
-
-                    // Ads finished, hide splash image and start playing ads
                     runOnUiThread {
-                        splashImageView.visibility = View.GONE // Hide splash screen
-                        updateStatus("")
-                    }
+                        updateStatus("Loading ads...")
+                        Thread.sleep(1000)
 
-                    runOnUiThread {
-                        adPlayer = AdPlayer(this@MainActivity)
-                        adPlayer.startPlaying()
+                        startAdPlayback()
                     }
-
                 } catch (e: InterruptedException) {
                     e.printStackTrace()
                 }
@@ -118,9 +99,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateStatus(message: String) {
-        runOnUiThread {
-            statusText.text = message
+    private fun startAdPlayback() {
+        adPlayer = AdPlayer(this@MainActivity)
+        adPlayer.startPlaying()
+        splashImageView.visibility = View.GONE
+        updateStatus("")
+    }
+
+    private fun showSplashScreen() {
+        splashImageView.setImageResource(R.drawable.splash)
+        splashImageView.visibility = View.VISIBLE
+    }
+
+    private fun showSplashImage() {
+        splashImageView.post {
+            splashImageView.setImageResource(R.drawable.splash)
+            splashImageView.visibility = View.VISIBLE
         }
     }
+
+    private fun updateStatus(message: String) {
+        statusText.text = message
+    }
 }
+

@@ -5,7 +5,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkInfo
 import android.os.Build
-import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -57,7 +56,7 @@ object AdManager {
             return
         }
 
-        // Download the assets (ads) in the background
+        // Download the assets (ads)
         val allAds = ads.toList()
         val total = allAds.size
 
@@ -68,7 +67,7 @@ object AdManager {
                 }
                 onProgress?.invoke(index + 1, total)
             } catch (e: Exception) {
-                e.printStackTrace() // Log and skip to the next ad
+                e.printStackTrace() // Log and continue
             }
         }
     }
@@ -76,42 +75,39 @@ object AdManager {
     private fun parseJson(json: String) {
         val root = JSONObject(json)
         ads.clear()
-        val images = root.getJSONObject("images")
-        val videos = root.getJSONObject("videos")
 
-        // Parse images
-        for (key in images.keys()) {
-            val item = images.getJSONObject(key)
-            val duration = item.getJSONObject("duration")
-            val durationMs = if (duration.getString("unit") == "seconds") {
-                duration.getInt("duration") * 1000
-            } else {
-                duration.getInt("duration")
+        fun parseMedia(jsonObject: JSONObject, isVideo: Boolean) {
+            for (key in jsonObject.keys()) {
+                val item = jsonObject.getJSONObject(key)
+                val id = item.getInt("id")
+                val path = item.getString("path")
+                val durationMs = if (isVideo) {
+                    item.getInt("durationMs")
+                } else {
+                    val durationObj = item.getJSONObject("duration")
+                    val unit = durationObj.getString("unit")
+                    val value = durationObj.getInt("duration")
+                    if (unit == "seconds") value * 1000 else value
+                }
+                ads.add(Ad(id, path, durationMs, isVideo))
             }
-            ads.add(Ad(item.getInt("id"), item.getString("path"), durationMs, isVideo = false))
         }
 
-        // Parse videos
-        for (key in videos.keys()) {
-            val item = videos.getJSONObject(key)
-            ads.add(Ad(item.getInt("id"), item.getString("path"), item.getInt("durationMs"), isVideo = true))
-        }
+        root.optJSONObject("images")?.let { parseMedia(it, isVideo = false) }
+        root.optJSONObject("videos")?.let { parseMedia(it, isVideo = true) }
     }
 
-    // Check if the device is connected to Wi-Fi (compatible with both new and old API versions)
     @Suppress("DEPRECATION")
     private fun isConnectedToWifi(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        // For Android 6 (API 23) and above, use NetworkCapabilities
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val network = connectivityManager.activeNetwork ?: return false
             val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-            return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
         } else {
-            // For older versions, use NetworkInfo
             val networkInfo: NetworkInfo? = connectivityManager.activeNetworkInfo
-            return networkInfo?.type == ConnectivityManager.TYPE_WIFI && networkInfo.isConnected
+            networkInfo?.type == ConnectivityManager.TYPE_WIFI && networkInfo.isConnected
         }
     }
 
